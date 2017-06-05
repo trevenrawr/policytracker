@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!-- Copyright: Trevor DiMartino, T-bag Technologies, 2017 -->
+<!-- Email: trevor.dimartino@colorado.edu -->
+
+<html ng-app="PolicyTracker">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+
+  <script src="/__/firebase/4.0.0/firebase-app.js"></script>
+  <script src="/__/firebase/4.0.0/firebase-auth.js"></script>
+  <script src="/__/firebase/4.0.0/firebase-database.js"></script>
+  <script src="/__/firebase/init.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+  <script src="js/main.js"></script>
+
+  <link rel="stylesheet" href="css/normalize7.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link rel="stylesheet" href="css/main.css">
+
+  <link href="https://fonts.googleapis.com/css?family=Raleway:300,400,500" rel="stylesheet">
+
+</head>
+<body><div id="app-container" ng-controller="PTctrl">
+  <div class="container">
+    <div class="row">
+      <div class="eight columns" style="text-align:center; margin-top: 5%">
+        <div ng-show="signedIn">
+          <h2>{{user.displayName}}'s Policy Tracker</h2>
+        </div>
+        <div ng-show="!signedIn">
+          <h2>Policy Tracker</h2>
+          <button class="button" ng-click="logIn()">Sign In with Google</button>
+        </div>
+      </div>
+    </div>
+    
+    <div ng-show="signedIn">
+      <div class="row">
+        <table class="u-full-width">
+          <tbody ng-repeat="(st_code, st) in states">
+            <tr>
+              <td colspan="7" class="state-name-row" ng-click="toggleCollapse(st_code)">
+                <div class="arrow-background"><div class="{{st.show ? 'arrow-open' : 'arrow-closed'}}"></div></div>
+                <h5>{{st.state_name}}</h5>
+              </td>
+            </tr>
+            <tr class="bills-header-row" ng-show="st.show">
+              <td>Bill</td>
+              <td>Sponsor(s)</td>
+              <td>Title</td>
+              <td>Issue</td>
+              <td colspan="2">Last Action</td>
+              <!--<td colspan="2">Next Action</td>-->
+              <td>Notes</td>
+            </tr>
+            <tr class="bill-row" ng-repeat="bill in st.bills" ng-show="st.show">
+              <td>
+                <a href="{{bill.os_data.versions[0].url}}">
+                  {{bill.os_data.bill_id}}
+                </a>
+              </td>
+              <td>{{bill.os_data.sponsors[0].name}}</td>
+              <td>{{bill.os_data.title}}</td>
+              <td>{{bill.os_data.scraped_subjects[0]}}</td>
+              <td>{{bill.os_data.actions[bill.os_data.actions.length - 1].date}}</td>
+              <td>{{bill.os_data.actions[bill.os_data.actions.length - 1].action}}</td>
+              <!--<td>{{bill.next_date}}</td>
+              <td>{{bill.next_action}}</td>-->
+              <td><div style="max-height: 200px; overflow-y: auto;">{{bill.os_data.summary}}</div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row">
+        <div class="one column"></div>
+        <div class="three columns">
+          <button class="button-primary u-full-width" ng-click="addBillModal()">Track New Bill</button>
+        </div>
+        <div class="three columns">
+          <button class="button-primary u-full-width" ng-click="refreshBills()">Refresh Bill Info</button>
+          <div class="last-updated">
+            Last updated: {{last_updated}}
+          </div>
+        </div>
+        <div class="three columns">
+          <button class="button-primary u-full-width" ng-click="saveStates()">Save Bill List</button>
+        </div>
+        <div class="two columns">
+          <button class="button-primary u-full-width" ng-click="logOut()">Sign Out</button>
+        </div>
+      </div>
+      </div> <!-- end show="signedIn" -->
+  </div> <!-- end Skeleton container -->
+
+    <modal-dialog show='modalShown' width='60%' height='75vh' style="max-height: 75vh;">
+      <div class="container">
+        <form name="addBillForm" ng-submit="addBillModalSearch()" novalidate>
+          <div class="row">
+            <div class="one columns">&nbsp</div>
+            <div class="five columns">
+              <label for="stateSelect">Select a state:</label>
+              <select id="stateSelect" name="stateSelect" class="u-full-width" ng-model="billSearch.state">
+                <option ng-repeat="state in stateList" ng-value="state.code">{{state.name}}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="one column">&nbsp</div>
+            <div class="five columns">
+              <label for="billID">The bill ID to search:</label>
+              <input name="billID" ng-model="billSearch.bill_id" type="text" class="u-full-width" placeholder="S 1821" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="one columns">&nbsp</div>
+            <input class="five columns button-primary" type="submit" value="Search" />
+          </div>
+        </form>
+
+        <div>
+          <table class="u-full-width">
+            <tbody>
+              <tr ng-repeat="res in osdata">
+                <td ng-click="addBill(res.id)" class="bill-choice">{{res.title}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </modal-dialog>
+</div></body>
+</html>
