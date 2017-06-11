@@ -42,7 +42,7 @@
         <table class="u-full-width">
           <tbody ng-repeat="(st_code, st) in states">
             <tr>
-              <td colspan="7" class="state-name-row" ng-click="toggleCollapse(st_code)">
+              <td colspan="6" class="state-name-row" ng-click="toggleCollapse(st_code)">
                 <div class="arrow-background"><div class="{{st.show ? 'arrow-open' : 'arrow-closed'}}"></div></div>
                 <h5>{{st.state_name}}</h5>
               </td>
@@ -51,10 +51,11 @@
               <td>Bill</td>
               <td>Sponsor(s)</td>
               <td>Title</td>
-              <td>Issue</td>
+              <!--<td>Issue</td>-->
               <td colspan="2">Last Action</td>
               <!--<td colspan="2">Next Action</td>-->
-              <td>Notes</td>
+              <td>Summary</td>
+              <td></td>
             </tr>
             <tr class="bill-row" ng-repeat="bill in st.bills" ng-show="st.show">
               <td>
@@ -64,12 +65,17 @@
               </td>
               <td>{{bill.os_data.sponsors[0].name}}</td>
               <td>{{bill.os_data.title}}</td>
-              <td>{{bill.os_data.scraped_subjects[0]}}</td>
+              <!--<td>{{bill.os_data.scraped_subjects[0]}}</td>-->
               <td>{{bill.os_data.actions[bill.os_data.actions.length - 1].date}}</td>
               <td>{{bill.os_data.actions[bill.os_data.actions.length - 1].action}}</td>
               <!--<td>{{bill.next_date}}</td>
               <td>{{bill.next_action}}</td>-->
-              <td><div style="max-height: 200px; overflow-y: auto;">{{bill.os_data.summary}}</div></td>
+              <td><div style="max-height: 12rem; overflow-y: auto;">{{bill.os_data.summary}}</div></td>
+              <td>
+                <div class="arrow-background" ng-click="removeBill(st_code, bill.id)">
+                  <div class="remove-x">&#xd7;</div>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -98,10 +104,10 @@
 
     <modal-dialog show='modalShown' width='60%' height='75vh' style="max-height: 75vh;">
       <div class="container">
-        <form name="addBillForm" ng-submit="addBillModalSearch()" novalidate>
+        <form name="addBillForm" id="addBillForm" ng-submit="addBillModalSearch()" novalidate>
           <div class="row">
-            <div class="one columns">&nbsp</div>
-            <div class="five columns">
+            <div class="one column">&nbsp;</div>
+            <div class="six columns">
               <label for="stateSelect">Select a state:</label>
               <select id="stateSelect" name="stateSelect" class="u-full-width" ng-model="billSearch.state">
                 <option ng-repeat="state in stateList" ng-value="state.code">{{state.name}}</option>
@@ -110,16 +116,20 @@
           </div>
 
           <div class="row">
-            <div class="one column">&nbsp</div>
-            <div class="five columns">
-              <label for="billID">The bill ID to search:</label>
-              <input name="billID" ng-model="billSearch.bill_id" type="text" class="u-full-width" placeholder="S 1821" />
+            <div class="one column">&nbsp;</div>
+            <div class="three columns">
+              <label for="billID">Bill ID:</label>
+              <input name="billID" ng-model="billSearch.bill_id" type="text" class="u-full-width" placeholder="AB 1088" />
+            </div>
+            <div class="three columns">
+              <label for="keyword">Keyword(s):</label>
+              <input name="keyword" ng-model="billSearch.keyword" type="text" class="u-full-width" placeholder="energy" />
             </div>
           </div>
 
           <div class="row">
-            <div class="one columns">&nbsp</div>
-            <input class="five columns button-primary" type="submit" value="Search" />
+            <div class="one column">&nbsp;</div>
+            <input class="six columns button-primary" type="submit" value="Search" />
           </div>
         </form>
 
@@ -127,7 +137,7 @@
           <table class="u-full-width">
             <tbody>
               <tr ng-repeat="res in osdata">
-                <td ng-click="addBill(res.id)" class="bill-choice">{{res.title}}</td>
+                <td ng-click="addBill(res.id, res.state)" class="bill-choice">{{res.state.toUpperCase()}} - {{res.bill_id}}: {{res.title}}</td>
               </tr>
             </tbody>
           </table>

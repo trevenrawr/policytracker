@@ -16,7 +16,8 @@ PTctrl = function($scope, $log, $http, $timeout) {
 
   $scope.billSearch = {
     'state': '',
-    'bill_id': ''
+    'bill_id': '',
+    'keyword': ''
   };
 
   $scope.stateList = [
@@ -171,10 +172,16 @@ PTctrl = function($scope, $log, $http, $timeout) {
   };
 
   $scope.addBillModalSearch = function () {
-    var searchString = 'state='+$scope.billSearch.state+'&bill_id='+$scope.billSearch.bill_id;
+    var searchState = ($scope.billSearch.state.length > 0) ? '&state='+$scope.billSearch.state : '';
+    var searchID = ($scope.billSearch.bill_id.length > 0) ? '&bill_id='+$scope.billSearch.bill_id : '';
+    var searchKeyword = ($scope.billSearch.keyword.length > 0) ? '&q='+$scope.billSearch.keyword : '';
+
+    var searchString = searchState + searchID + searchKeyword;
+
+    //$log.log('Searching at: '+searchString);
 
     $http.get(
-      ('https://openstates.org/api/v1/bills/?apikey=dfd57ce6-3ef8-4b31-bd65-d37473067fac&' + searchString)
+      ('https://openstates.org/api/v1/bills/?apikey=dfd57ce6-3ef8-4b31-bd65-d37473067fac' + searchString)
     ).then(
       function successCallback(response) {
         $scope.osdata = response.data;
@@ -210,24 +217,28 @@ PTctrl = function($scope, $log, $http, $timeout) {
     return true;
   }
 
-  $scope.addBill = function (os_id) {
+  $scope.addBill = function (os_id, state_code) {
+
     // If we have none for this state, we need to insert it first
-    if (typeof $scope.states[$scope.billSearch.state] === 'undefined') {
+    if (typeof $scope.states[state_code] === 'undefined') {
       function findState(candistate) {
-        return candistate.code === $scope.billSearch.state;
+        return candistate.code === state_code;
       }
-      $scope.states[$scope.billSearch.state] = {
+      $scope.states[state_code] = {
         'state_name': $scope.stateList.find(findState).name,
         'show': true,
         'bills': {}
       };
     }
 
+    // Just in case it wasn't showing before, we want to make the new bill visible!
+    $scope.states[state_code].show = true;
+
     var next_ref = firebase.database().ref('users/'+$scope.user.uid+'/states').push();
 
-    $log.log('Added bill to state '+$scope.billSearch.state+' with id: '+next_ref.key);
+    //$log.log('Added bill to state '+state_code+' with id: '+next_ref.key);
 
-    $scope.states[$scope.billSearch.state].bills[next_ref.key] = {
+    $scope.states[state_code].bills[next_ref.key] = {
       "id": next_ref.key,
       "os_id": os_id,
       "notes": "",
@@ -238,7 +249,7 @@ PTctrl = function($scope, $log, $http, $timeout) {
       "os_data": {}
     };
 
-    $scope.fillBillDetails(os_id, $scope.billSearch.state, next_ref.key);
+    $scope.fillBillDetails(os_id, state_code, next_ref.key);
 
     $scope.modalShown = false;
 
@@ -256,14 +267,23 @@ PTctrl = function($scope, $log, $http, $timeout) {
   };
 
   $scope.toggleCollapse = function (st_code) {
-    $log.log('Currently: '+$scope.states[st_code].show+' for state '+st_code);
+    //$log.log('Currently: '+$scope.states[st_code].show+' for state '+st_code);
     if ($scope.states[st_code].show === 'undefined') {
       // This default value is about to get flipped.
       $scope.states[st_code].show = false;
     }
 
     $scope.states[st_code].show = !$scope.states[st_code].show;
-  }
+  };
+
+  $scope.removeBill = function (st_code, bill_id) {
+    delete $scope.states[st_code].bills[bill_id];
+    //$log.log(Object.keys($scope.states[st_code].bills).length + " bills remaining in "+st_code);
+
+    if (Object.keys($scope.states[st_code].bills).length == 0) {
+      delete $scope.states[st_code];
+    }
+  };
 };
 
 app = angular.module('PolicyTracker', []).controller('PTctrl', PTctrl);
